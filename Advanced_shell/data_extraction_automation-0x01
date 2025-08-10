@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# This script extracts and formats data from data.json.
+# It uses jq to parse JSON and awk to format the output string.
+
+DATA_FILE="data.json"
+
+if [ ! -f "$DATA_FILE" ]; then
+    echo "Error: $DATA_FILE not found. Please run the API automation script first." >&2
+    exit 1
+fi
+
+# Use jq to extract raw data and pipe it to awk for formatting.
+# jq -r outputs raw strings without JSON quotes.
+# awk processes the lines:
+# NR==1: name (capitalize first letter)
+# NR==2: height (convert from decimetres to meters)
+# NR==3: weight (convert from hectograms to kilograms)
+# NR==4: type
+# END block prints the final formatted sentence.
+jq -r '.name, .height, .weight, .types[0].type.name' "$DATA_FILE" |
+awk '
+NR==1 { name=toupper(substr($0,1,1)) substr($0,2) }
+NR==2 { height=$0/10 }
+NR==3 { weight=$0/10 }
+NR==4 { type=toupper(substr($0,1,1)) substr($0,2) }
+END {
+    printf "%s is of type %s, weighs %skg, and is %sm tall.\n", name, type, weight, height
+}'

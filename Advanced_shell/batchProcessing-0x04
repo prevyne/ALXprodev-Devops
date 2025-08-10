@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# This script fetches data for multiple Pokémon in parallel.
+
+POKEMON_LIST=("Bulbasaur" "Ivysaur" "Venusaur" "Charmander" "Charmeleon")
+OUTPUT_DIR="pokemon_data_parallel"
+
+mkdir -p "$OUTPUT_DIR"
+
+# Function to fetch data for a single Pokémon
+fetch_pokemon() {
+    local pokemon_name=$1
+    local pokemon_lower=$(echo "$pokemon_name" | tr '[:upper:]' '[:lower:]')
+    local output_file="$OUTPUT_DIR/${pokemon_lower}.json"
+    local api_url="https://pokeapi.co/api/v2/pokemon/${pokemon_lower}"
+    
+    echo "Fetching data for $pokemon_lower..."
+    if curl -fsS -o "$output_file" "$api_url"; then
+        echo "Successfully saved data for $pokemon_lower."
+    else
+        echo "Failed to fetch data for $pokemon_lower." >&2
+        rm -f "$output_file" # Clean up failed download
+    fi
+}
+
+for pokemon in "${POKEMON_LIST[@]}"; do
+    # Start each fetch operation as a background process
+    fetch_pokemon "$pokemon" &
+done
+
+# Wait for all background processes (jobs) to complete
+wait
+
+echo ""
+echo "All parallel fetches are complete."
+ls -l "$OUTPUT_DIR"
