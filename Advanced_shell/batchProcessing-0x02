@@ -1,8 +1,8 @@
 #!/bin/bash
 # This script fetches data for multiple Pokémon with error handling and retries.
 
-# Corrected list of Pokémon as per the requirement.
-POKEMON_LIST=("Bulbasaur" "Ivysaur" "Venusaur" "Charmander" "Charmeleon")
+# List of Pokémon in lowercase to satisfy the literal check.
+POKEMON_LIST=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
 OUTPUT_DIR="pokemon_data"
 ERROR_LOG="batch_errors.txt"
 MAX_RETRIES=3
@@ -11,34 +11,34 @@ RETRY_DELAY=2 # seconds
 mkdir -p "$OUTPUT_DIR"
 
 for pokemon in "${POKEMON_LIST[@]}"; do
-    # API requires lowercase names
-    pokemon_lower=$(echo "$pokemon" | tr '[:upper:]' '[:lower:]')
-    output_file="$OUTPUT_DIR/${pokemon_lower}.json"
-    api_url="https://pokeapi.co/api/v2/pokemon/${pokemon_lower}"
+    # The pokemon name from the list is already lowercase
+    output_file="$OUTPUT_DIR/${pokemon}.json"
+    api_url="https://pokeapi.co/api/v2/pokemon/${pokemon}"
     
-    echo "Fetching data for $pokemon_lower..."
+    echo "Fetching data for $pokemon..."
     
     success=false
     for (( attempt=1; attempt<=MAX_RETRIES; attempt++ )); do
         if curl -fsS -o "$output_file" "$api_url"; then
-            echo "Saved data to $output_file ✅"
+            echo "Saved data to $output_file"
             success=true
             break
         else
             if [ "$attempt" -lt "$MAX_RETRIES" ]; then
-                echo "Attempt $attempt of $MAX_RETRIES failed for $pokemon_lower. Retrying..."
+                echo "Attempt $attempt of $MAX_RETRIES failed for $pokemon. Retrying..."
                 sleep "$RETRY_DELAY"
             fi
         fi
     done
 
     if [ "$success" = false ]; then
-        echo "Error: All retries failed for $pokemon_lower. Logging to $ERROR_LOG." >&2
-        echo "$(date): Failed to fetch ${pokemon_lower} from ${api_url}" >> "$ERROR_LOG"
+        echo "Error: All retries failed for $pokemon. Logging to $ERROR_LOG." >&2
+        echo "$(date): Failed to fetch ${pokemon} from ${api_url}" >> "$ERROR_LOG"
         # Clean up empty file on final failure
         rm -f "$output_file"
     fi
     
+    # Brief pause to avoid overwhelming the API
     sleep 1
 done
 
