@@ -1,8 +1,8 @@
 #!/bin/bash
-
 # This script fetches data for multiple Pokémon with error handling and retries.
 
-POKEMON_LIST=("Bulbasaur" "Ivysaur" "Venusaur" "Charmander" "Charmeleon" "InvalidMon")
+# Corrected list of Pokémon as per the requirement.
+POKEMON_LIST=("Bulbasaur" "Ivysaur" "Venusaur" "Charmander" "Charmeleon")
 OUTPUT_DIR="pokemon_data"
 ERROR_LOG="batch_errors.txt"
 MAX_RETRIES=3
@@ -25,8 +25,8 @@ for pokemon in "${POKEMON_LIST[@]}"; do
             success=true
             break
         else
-            echo "Attempt $attempt of $MAX_RETRIES failed for $pokemon_lower."
             if [ "$attempt" -lt "$MAX_RETRIES" ]; then
+                echo "Attempt $attempt of $MAX_RETRIES failed for $pokemon_lower. Retrying..."
                 sleep "$RETRY_DELAY"
             fi
         fi
@@ -39,7 +39,6 @@ for pokemon in "${POKEMON_LIST[@]}"; do
         rm -f "$output_file"
     fi
     
-    # Brief pause to avoid overwhelming the API
     sleep 1
 done
 

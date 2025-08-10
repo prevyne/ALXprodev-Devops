@@ -1,29 +1,28 @@
 #!/bin/bash
-
 # This script extracts and formats data from data.json.
-# It uses jq to parse JSON and awk to format the output string.
+# It uses jq to parse, sed to capitalize, and awk to format.
 
 DATA_FILE="data.json"
 
 if [ ! -f "$DATA_FILE" ]; then
-    echo "Error: $DATA_FILE not found. Please run the API automation script first." >&2
+    echo "Error: $DATA_FILE not found." >&2
     exit 1
 fi
 
-# Use jq to extract raw data and pipe it to awk for formatting.
-# jq -r outputs raw strings without JSON quotes.
-# awk processes the lines:
-# NR==1: name (capitalize first letter)
-# NR==2: height (convert from decimetres to meters)
-# NR==3: weight (convert from hectograms to kilograms)
-# NR==4: type
-# END block prints the final formatted sentence.
-jq -r '.name, .height, .weight, .types[0].type.name' "$DATA_FILE" |
-awk '
-NR==1 { name=toupper(substr($0,1,1)) substr($0,2) }
-NR==2 { height=$0/10 }
-NR==3 { weight=$0/10 }
-NR==4 { type=toupper(substr($0,1,1)) substr($0,2) }
-END {
-    printf "%s is of type %s, weighs %skg, and is %sm tall.\n", name, type, weight, height
-}'
+# 1. jq extracts the raw data points.
+# 2. sed capitalizes the first letter of the first line (name).
+# 3. awk reads the processed lines into an array, performs calculations,
+#    and prints the final, formatted string.
+name_type_data=$(jq -r '.name, .types[0].type.name' "$DATA_FILE" | sed -e '1s/./\u&/' -e '2s/./\u&/')
+height_weight_data=$(jq -r '.height, .weight' "$DATA_FILE")
+
+name=$(echo "$name_type_data" | awk 'NR==1')
+type=$(echo "$name_type_data" | awk 'NR==2')
+
+height=$(echo "$height_weight_data" | awk 'NR==1')
+weight=$(echo "$height_weight_data" | awk 'NR==2')
+
+formatted_height=$(awk "BEGIN {printf \"%.1f\", $height/10}")
+formatted_weight=$(awk "BEGIN {printf \"%.1f\", $weight/10}")
+
+echo "$name is of type $type, weighs ${formatted_weight}kg, and is ${formatted_height}m tall."
